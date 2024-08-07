@@ -43,6 +43,10 @@ wasmparser = { version = "0.215.0", default-features = false, features = [ "std"
 name = "wasset"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+description.workspace = true
 
 [features]
 encode = [ "dep:toml", "uuid/fast-rng", "uuid/v4" ]
