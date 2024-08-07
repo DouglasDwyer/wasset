@@ -1,4 +1,4 @@
 # Wasset files can be used to augment assets with extra metadata.
 
 ["some_text.txt"]
-append = " world!"
+append = " world!"  # Append extra text to the contents of the file

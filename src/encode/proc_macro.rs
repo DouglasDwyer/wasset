@@ -8,6 +8,9 @@ use quote::quote;
 use std::fs::*;
 use std::path::*;
 
+/// Provides a macro implementation which accepts a directory path and outputs
+/// code which embeds all assets in the directory. This should be called with a concrete
+/// asset type from a user-defined macro.
 pub fn include_assets<A: AssetEncoder>(x: TokenStream) -> TokenStream {
     let input = x.into_iter().map(Into::into).collect::<Vec<TokenTree>>();
     assert!(input.len() == 1, "Wrong number of arguments.");
@@ -33,6 +36,7 @@ pub fn include_assets<A: AssetEncoder>(x: TokenStream) -> TokenStream {
     write_assets(&assets)
 }
 
+/// Writes the set of encoded assets as code.
 fn write_assets(assets: &EncodedAssets) -> TokenStream {
     let id = Uuid::new_v4();
     let manifest_name = proc_macro2::Literal::string(&format!("__wasset_manifest:{id}"));
@@ -69,6 +73,7 @@ fn resolve_path(path: &str, parent_dir_path: Option<PathBuf>) -> std::io::Result
     canonicalize(&path)
 }
 
+/// Gets tokens which encode the given asset hierarchy.
 fn tokens_for_hierarchy(name: &str, hierarchy: &AssetHierarchy) -> proc_macro2::TokenStream {
     let mut inner_module = proc_macro2::TokenStream::new();
     inner_module.extend(hierarchy.sub_hierarchies.iter().map(|(n, h)| tokens_for_hierarchy(n, h)));

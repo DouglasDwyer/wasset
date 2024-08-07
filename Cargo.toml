@@ -64,3 +64,6 @@ wasmparser = { workspace = true, optional = true }
 
 [build-dependencies]
 rustversion.workspace = true
+
+[package.metadata."docs.rs"]
+all-features = true

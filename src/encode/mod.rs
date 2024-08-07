@@ -5,33 +5,50 @@ use std::fs::*;
 use std::path::*;
 use toml::*;
 
+/// Defines macros for easily embedding assets.
 mod proc_macro;
 
+/// Represents a type that can load assets from files on disk.
 pub trait AssetEncoder {
+    /// The target asset type that this encoder produces.
     type Target: AssetSchema;
 
+    /// Creates a new `Target` asset from file data. The target asset data may be modified
+    /// based upon the file `extension`, or by the `metadata` from a `Wasset.toml` file
+    /// in the same directory.
     fn encode(extension: &str, metadata: &Table, data: Vec<u8>) -> Result<Option<Self::Target>, WassetError>;
 }
 
+/// Denotes an asset that has been serialized.
 #[derive(Clone, Debug)]
 pub struct EncodedAsset {
+    /// The name of the asset that should be displayed to the developer.
     pub name: String,
+    /// The asset ID.
     pub id: WassetId
 }
 
+/// Represents a hierarchy of assets that have been serialized.
 #[derive(Clone, Debug, Default)]
 pub struct AssetHierarchy {
+    /// The assets on this level of the hierarchy.
     pub assets: Vec<EncodedAsset>,
+    /// A mapping from display names to subhierarchies.
     pub sub_hierarchies: FxHashMap<String, AssetHierarchy>
 }
 
+/// Holds an entire set of assets that have been serialized from files on disk.
 #[derive(Debug, Default)]
 pub struct EncodedAssets {
+    /// The data that should be written to the custom section for holding the assets.
     pub data: Vec<u8>,
+    /// The encoded asset names and IDs, so that they may be referenced by the WASM plugin.
     pub encoded_assets: FxHashMap<String, AssetHierarchy>,
+    /// The serialized manifest describing the assets.
     pub manifest: Vec<u8>,
 }
 
+/// Loads all assets from the provided folder into an `EncodedAssets` structure.
 pub fn encode_asset_folder<A: AssetEncoder>(folder: &Path) -> Result<EncodedAssets, WassetError> {
     let mut data = Vec::new();
     let mut hierarchy = AssetHierarchy::default();
@@ -54,12 +71,17 @@ pub fn encode_asset_folder<A: AssetEncoder>(folder: &Path) -> Result<EncodedAsse
     })
 }
 
+/// Represents an ongoing operation to encode assets.
 struct EncodingOperation<'a> {
+    /// The data section.
     pub data: &'a mut Vec<u8>,
+    /// The current hierarchy level.
     pub encoded_assets: &'a mut AssetHierarchy,
+    /// The manifest.
     pub manifest: &'a mut WassetManifest
 }
 
+/// Loads all assets from a certain folder into the `operation`.
 fn load_assets_in_folder<A: AssetEncoder>(base: &Path, folder: &Path, operation: &mut EncodingOperation) -> Result<(), WassetError> {
     let master_table = if let Ok(options) = read_to_string(folder.join("Wasset.toml")) {
         options.parse::<Table>().map_err(WassetError::from_serialize)?
@@ -90,7 +112,7 @@ fn load_assets_in_folder<A: AssetEncoder>(base: &Path, folder: &Path, operation:
                     Some(x) => return Err(WassetError::from_serialize(format!("Unexpected metadata value {x:?} for asset {file_name}; expected table")))
                 };
 
-                if let Some(asset) = A::encode(&path.extension().unwrap_or_default().to_string_lossy(), &metadata, read(&path).map_err(WassetError::from_serialize)?)? {
+                if let Some(asset) = A::encode(&path.extension().unwrap_or_default().to_string_lossy(), metadata, read(&path).map_err(WassetError::from_serialize)?)? {
                     let entry_name = name_for_path(&local_path)?;
                     let id = WassetId::from(Uuid::new_v4());
 
@@ -110,6 +132,7 @@ fn load_assets_in_folder<A: AssetEncoder>(base: &Path, folder: &Path, operation:
     Ok(())
 }
 
-fn name_for_path<'a>(path: &'a Path) -> Result<Cow<'a, str>, WassetError> {
+/// Gets the name at the end of the file path as a string.
+fn name_for_path(path: &Path) -> Result<Cow<str>, WassetError> {
     Ok(path.file_name().ok_or_else(|| WassetError::from_serialize("Failed to get file system name"))?.to_string_lossy())
 }
