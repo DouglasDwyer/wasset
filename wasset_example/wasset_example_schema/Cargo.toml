@@ -1,0 +1,7 @@
+[package]
+name = "wasset_example_schema"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true

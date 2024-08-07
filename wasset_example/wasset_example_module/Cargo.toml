@@ -1,0 +1,11 @@
+[package]
+name = "wasset_example_module"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = [ "cdylib" ]
+
+[dependencies]
+wasset.workspace = true
+wasset_example_macro.workspace = true

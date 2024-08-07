@@ -1,0 +1,12 @@
+[package]
+name = "wasset_example_macro"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+toml.workspace = true
+wasset_example_schema.workspace = true
+wasset = { workspace = true, features = [ "encode_macro" ] }

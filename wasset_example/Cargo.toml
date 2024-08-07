@@ -1,0 +1,12 @@
+[package]
+name = "wasset_example"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+description.workspace = true
+
+[dependencies]
+wasset = { workspace = true, features = [ "parse" ] }
+wasset_example_schema.workspace = true
