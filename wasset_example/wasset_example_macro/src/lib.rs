@@ -6,7 +6,7 @@ use wasset_example_schema::*;
 
 #[proc_macro]
 pub fn include_assets(path: TokenStream) -> TokenStream {
-    wasset::include_assets::<ExampleAssetEncoder>(path)
+    wasset::include_assets::<ExampleAssetEncoder>(path, &quote::quote! { ::wasset::WassetId })
 }
 
 struct ExampleAssetEncoder;

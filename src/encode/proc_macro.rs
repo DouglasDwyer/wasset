@@ -11,7 +11,7 @@ use std::path::*;
 /// Provides a macro implementation which accepts a directory path and outputs
 /// code which embeds all assets in the directory. This should be called with a concrete
 /// asset type from a user-defined macro.
-pub fn include_assets<A: AssetEncoder>(x: TokenStream) -> TokenStream {
+pub fn include_assets<A: AssetEncoder>(x: TokenStream, wasset_id_path: &proc_macro2::TokenStream) -> TokenStream {
     let input = x.into_iter().map(Into::into).collect::<Vec<TokenTree>>();
     assert!(input.len() == 1, "Wrong number of arguments.");
     let x = StringLit::try_from(&input[0])
@@ -33,11 +33,11 @@ pub fn include_assets<A: AssetEncoder>(x: TokenStream) -> TokenStream {
     tracked_path::path(resolved_path.display().to_string());
 
     let assets = encode_asset_folder::<A>(&resolved_path).expect("Failed to encode assets");
-    write_assets(&assets)
+    write_assets(&assets, wasset_id_path)
 }
 
 /// Writes the set of encoded assets as code.
-fn write_assets(assets: &EncodedAssets) -> TokenStream {
+fn write_assets(assets: &EncodedAssets, wasset_id_path: &proc_macro2::TokenStream) -> TokenStream {
     let id = Uuid::new_v4();
     let manifest_name = proc_macro2::Literal::string(&format!("__wasset_manifest:{id}"));
     let contents_name = proc_macro2::Literal::string(&format!("__wasset_data:{id}"));
@@ -57,7 +57,7 @@ fn write_assets(assets: &EncodedAssets) -> TokenStream {
         };
     };
 
-    data.extend(assets.encoded_assets.iter().map(|(name, hierarchy)| tokens_for_hierarchy(name, hierarchy)));
+    data.extend(assets.encoded_assets.iter().map(|(name, hierarchy)| tokens_for_hierarchy(name, hierarchy, wasset_id_path)));
 
     data.into()
 }
@@ -74,15 +74,15 @@ fn resolve_path(path: &str, parent_dir_path: Option<PathBuf>) -> std::io::Result
 }
 
 /// Gets tokens which encode the given asset hierarchy.
-fn tokens_for_hierarchy(name: &str, hierarchy: &AssetHierarchy) -> proc_macro2::TokenStream {
+fn tokens_for_hierarchy(name: &str, hierarchy: &AssetHierarchy, wasset_id_path: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let mut inner_module = proc_macro2::TokenStream::new();
-    inner_module.extend(hierarchy.sub_hierarchies.iter().map(|(n, h)| tokens_for_hierarchy(n, h)));
+    inner_module.extend(hierarchy.sub_hierarchies.iter().map(|(n, h)| tokens_for_hierarchy(n, h, wasset_id_path)));
     inner_module.extend(hierarchy.assets.iter().map(|entry| {
         let entry_name = proc_macro2::Ident::new(&entry.name.to_uppercase(), proc_macro2::Span::call_site());
         let byte_data = proc_macro2::Literal::byte_string(&entry.id.as_bytes()[..]);
 
         quote! {
-            pub const #entry_name: ::wasset::WassetId = ::wasset::WassetId::from_bytes(* #byte_data);
+            pub const #entry_name: #wasset_id_path = #wasset_id_path::from_bytes(* #byte_data);
         }
     }));
 
