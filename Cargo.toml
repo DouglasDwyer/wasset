@@ -10,7 +10,7 @@ members = [
 
 [workspace.package]
 edition = "2021"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/DouglasDwyer/wasset"
 readme = "README.md"
@@ -20,7 +20,7 @@ Embed external assets into WASM modules.
 
 [workspace.dependencies]
 # Internal dependencies
-wasset = { path = ".", version = "0.1.0" }
+wasset = { path = ".", version = "0.1.1" }
 wasset_example = { path = "wasset_example" }
 wasset_example_macro = { path = "wasset_example/wasset_example_macro" }
 wasset_example_module = { path = "wasset_example/wasset_example_module" }

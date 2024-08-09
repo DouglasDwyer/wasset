@@ -335,7 +335,7 @@ dependencies = [
 
 [[package]]
 name = "wasset"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytemuck",
  "fxhash",
@@ -353,7 +353,7 @@ dependencies = [
 
 [[package]]
 name = "wasset_example"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "wasset",
  "wasset_example_schema",
@@ -361,8 +361,9 @@ dependencies = [
 
 [[package]]
 name = "wasset_example_macro"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "quote",
  "toml",
  "wasset",
  "wasset_example_schema",
@@ -370,7 +371,7 @@ dependencies = [
 
 [[package]]
 name = "wasset_example_module"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "wasset",
  "wasset_example_macro",
@@ -378,7 +379,7 @@ dependencies = [
 
 [[package]]
 name = "wasset_example_schema"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
 ]
