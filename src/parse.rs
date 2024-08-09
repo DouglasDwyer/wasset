@@ -2,6 +2,39 @@ use crate::*;
 use std::marker::*;
 use wasmparser::*;
 
+/// References the raw data representing an asset from within a WASM module.
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WassetItem<'a, A: AssetSchema> {
+    /// The inner data.
+    data: &'a [u8],
+    /// A marker type for `A`.
+    marker: PhantomData<fn(A)>
+}
+
+impl<'a, A: AssetSchema> WassetItem<'a, A> {
+    /// Deserializes the provided bytes as an asset.
+    pub fn deserialize(&self) -> Result<A, WassetError> {
+        rmp_serde::from_slice(self.data).map_err(WassetError::from_deserialize)
+    }
+}
+
+impl<'a, A: AssetSchema> Deref for WassetItem<'a, A> {
+    type Target = [u8];
+    
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+impl<'a, A: AssetSchema> From<&'a [u8]> for WassetItem<'a, A> {
+    fn from(value: &'a [u8]) -> Self {
+        Self {
+            data: value,
+            marker: PhantomData
+        }
+    }
+}
+
 /// Parses all assets from a WASM module.
 pub struct WassetParser<'a, A: AssetSchema> {
     /// The manifest associated with the module.
@@ -62,6 +95,17 @@ impl<'a, A: AssetSchema> WassetParser<'a, A> {
     /// did not exist.
     pub fn load(&self, id: WassetId) -> Result<Option<A>, WassetError> {
         if let Some(range) = self.manifest.asset_ranges.get(&id) {
+            Ok(Some(self.load_by_range(range.clone())?.deserialize()?))
+        }
+        else {
+            Ok(None)
+        }
+    }
+
+    /// Loads the raw data associated with the given ID, returning `None` if it
+    /// did not exist.
+    pub fn load_raw(&self, id: WassetId) -> Result<Option<WassetItem<A>>, WassetError> {
+        if let Some(range) = self.manifest.asset_ranges.get(&id) {
             Ok(Some(self.load_by_range(range.clone())?))
         }
         else {
@@ -75,12 +119,12 @@ impl<'a, A: AssetSchema> WassetParser<'a, A> {
     }
 
     /// Loads an asset from the provided byte range in the module.
-    fn load_by_range(&self, range: Range<u32>) -> Result<A, WassetError> {
+    fn load_by_range(&self, range: Range<u32>) -> Result<WassetItem<A>, WassetError> {
         if let Some(slice) = self.module.get(range.start as usize..range.end as usize) {
-            Ok(rmp_serde::from_slice(slice).map_err(WassetError::from_deserialize)?)
+            Ok(WassetItem::from(slice))
         }
         else {
-            todo!("Wasset error: index out of range")
+            Err(WassetError::from_deserialize("index out of range"))
         }
     }
 
@@ -143,7 +187,7 @@ impl<'a, A: AssetSchema> Iterator for WassetIter<'a, A> {
     type Item = (WassetId, Result<A, WassetError>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(id, range)| (*id, self.parser.load_by_range(range.clone())))
+        self.iter.next().map(|(id, range)| (*id, self.parser.load_by_range(range.clone()).and_then(|x| x.deserialize())))
     }
 }
 

@@ -64,6 +64,7 @@ fn main() {
 
 ## Optional features
 
+- **bytemuck** - implements the `Pod` and `Zeroable` attributes on relevant types.
 - **encode** - allows for serializing a folder of assets into memory.
 - **encode_macro** - exposes a generic macro that, when instantiated, will embed a folder of assets into a WASM module.
 - **parse** - exposes the ability to read a WASM module's assets.

@@ -27,6 +27,7 @@ wasset_example_module = { path = "wasset_example/wasset_example_module" }
 wasset_example_schema = { path = "wasset_example/wasset_example_schema" }
 
 # External dependencies
+bytemuck = { version = "1.16.3", default-features = false, features = [ "derive" ] }
 fxhash = { version = "0.2.1", default-features = false }
 litrs = { version = "0.4.1", default-features = false }
 proc-macro2 = { version = "1.0.78", default-features = false, features = [ "proc-macro" ] }
@@ -49,12 +50,14 @@ readme.workspace = true
 description.workspace = true
 
 [features]
+bytemuck = [ "dep:bytemuck" ]
 encode = [ "dep:toml", "uuid/fast-rng", "uuid/v4" ]
 encode_macro = [ "dep:litrs", "dep:proc-macro2", "dep:quote", "encode" ]
 parse = [ "dep:wasmparser" ]
 relative_path = [ "encode_macro" ]
 
 [dependencies]
+bytemuck = { workspace = true, optional = true }
 fxhash.workspace = true
 litrs = { workspace = true, optional = true }
 proc-macro2 = { workspace = true, optional = true }

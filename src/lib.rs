@@ -61,13 +61,13 @@
 //! 
 //! ## Optional features
 //! 
+//! - **bytemuck** - implements the `Pod` and `Zeroable` attributes on relevant types.
 //! - **encode** - allows for serializing a folder of assets into memory.
 //! - **encode_macro** - exposes a generic macro that, when instantiated, will embed a folder of assets into a WASM module.
 //! - **parse** - exposes the ability to read a WASM module's assets.
 //! - **relative_path** - (requires nightly) makes the `encode_macro` use relative paths rather than paths from the project root.
 
 #![deny(warnings)]
-#![forbid(unsafe_code)]
 #![warn(clippy::missing_docs_in_private_items)]
 
 #![cfg_attr(all(unstable, feature = "encode_macro"), feature(track_path))]
@@ -79,8 +79,11 @@ pub use crate::encode::*;
 #[cfg(feature = "parse")]
 pub use crate::parse::*;
 
+#[cfg(feature = "bytemuck")]
+use bytemuck::*;
 use fxhash::*;
 use ::serde::*;
+use std::borrow::*;
 use std::ops::*;
 use uuid::*;
 
@@ -126,11 +129,30 @@ impl From<WassetId> for Uuid {
     }
 }
 
+impl Borrow<[u8; 16]> for WassetId {
+    fn borrow(&self) -> &[u8; 16] {
+        self.as_bytes()
+    }
+}
+
+#[cfg(feature = "bytemuck")]
+unsafe impl Pod for WassetId {}
+
+#[cfg(feature = "bytemuck")]
+unsafe impl Zeroable for WassetId {}
+
 /// A list which describes the list of assets present in a WASM module.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WassetManifest {
     /// A mapping from asset IDs to offsets within a custom data section.
     asset_ranges: FxHashMap<WassetId, Range<u32>>
+}
+
+impl WassetManifest {
+    /// Gets an iterator over the IDs of all assets stored in the module.
+    pub fn ids(&self) -> impl '_ + Iterator<Item = WassetId> {
+        self.asset_ranges.keys().copied()
+    }
 }
 
 /// Represents an error that occurred during asset processing.
