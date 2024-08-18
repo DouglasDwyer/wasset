@@ -89,6 +89,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "leb128"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
+
+[[package]]
 name = "libc"
 version = "0.2.155"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -324,6 +330,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
+name = "wasm-encoder"
+version = "0.215.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fb56df3e06b8e6b77e37d2969a50ba51281029a9aeb3855e76b7f49b6418847"
+dependencies = [
+ "leb128",
+]
+
+[[package]]
 name = "wasmparser"
 version = "0.215.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -335,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "wasset"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "bytemuck",
  "fxhash",
@@ -348,12 +363,13 @@ dependencies = [
  "thiserror",
  "toml",
  "uuid",
+ "wasm-encoder",
  "wasmparser",
 ]
 
 [[package]]
 name = "wasset_example"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "wasset",
  "wasset_example_schema",
@@ -361,7 +377,7 @@ dependencies = [
 
 [[package]]
 name = "wasset_example_macro"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "quote",
  "toml",
@@ -371,7 +387,7 @@ dependencies = [
 
 [[package]]
 name = "wasset_example_module"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "wasset",
  "wasset_example_macro",
@@ -379,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "wasset_example_schema"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
 ]

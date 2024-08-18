@@ -1,5 +1,7 @@
 use crate::*;
 use std::marker::*;
+use std::mem::*;
+use wasm_encoder::*;
 use wasmparser::*;
 
 /// References the raw data representing an asset from within a WASM module.
@@ -46,6 +48,11 @@ pub struct WassetParser<'a, A: AssetSchema> {
 }
 
 impl<'a, A: AssetSchema> WassetParser<'a, A> {
+    /// The custom section name prefix for serialized manifests.
+    const ASSET_MANIFEST_SECTION_PREFIX: &'static str = "__wasset_manifest:";
+    /// The custom section name prefix for serialized asset data.
+    const ASSET_DATA_SECTION_PREFIX: &'static str = "__wasset_data:";
+
     /// Attempts to parse the asset list from the given module.
     pub fn parse(module: &'a [u8]) -> Result<Self, WassetError> {
         let mut contents = module;
@@ -118,6 +125,56 @@ impl<'a, A: AssetSchema> WassetParser<'a, A> {
         &self.manifest
     }
 
+    /// Returns the WASM module bytecode with any custom asset sections removed.
+    pub fn strip_module(&self) -> Result<Vec<u8>, WassetError> {
+        let mut output = Vec::new();
+        let mut stack = Vec::new();
+
+        for payload in Parser::new(0).parse_all(self.module) {
+            let payload = payload.map_err(WassetError::from_deserialize)?;
+
+            // Track nesting depth, so that we don't mess with inner producer sections:
+            match payload {
+                Payload::Version { .. } => output.extend_from_slice(&Module::HEADER),
+                Payload::ModuleSection { .. } => {
+                    stack.push(take(&mut output));
+                    continue;
+                }
+                Payload::End { .. } => {
+                    let mut parent = match stack.pop() {
+                        Some(c) => c,
+                        None => break,
+                    };
+                    
+                    parent.push(ComponentSectionId::CoreModule as u8);
+                    output.encode(&mut parent);
+                    
+                    output = parent;
+                }
+                _ => {}
+            }
+
+            match &payload {
+                Payload::CustomSection(c) => {
+                    if c.name().starts_with(Self::ASSET_MANIFEST_SECTION_PREFIX)
+                        || c.name().starts_with(Self::ASSET_DATA_SECTION_PREFIX) {
+                        continue;
+                    }
+                }
+                _ => {}
+            }
+
+            if let Some((id, range)) = payload.as_section() {
+                RawSection {
+                    id,
+                    data: &self.module[range],
+                }.append_to(&mut output);
+            }
+        }
+
+        Ok(output)
+    }
+
     /// Loads an asset from the provided byte range in the module.
     fn load_by_range(&self, range: Range<u32>) -> Result<WassetItem<A>, WassetError> {
         if let Some(slice) = self.module.get(range.start as usize..range.end as usize) {
@@ -143,18 +200,13 @@ impl<'a, A: AssetSchema> WassetParser<'a, A> {
 
     /// Parses a WASM module's custom section, checking whether it holds an asset manifest or data.
     fn parse_module_custom_section(reader: CustomSectionReader<'a>, offsets: &mut FxHashMap<Uuid, WassetOffsets<'a>>) -> Result<(), WassetError> {
-        /// The custom section name prefix for serialized manifests.
-        const ASSET_MANIFEST_SECTION_PREFIX: &str = "__wasset_manifest:";
-        /// The custom section name prefix for serialized asset data.
-        const ASSET_DATA_SECTION_PREFIX: &str = "__wasset_data:";
-
-        if reader.name().starts_with(ASSET_MANIFEST_SECTION_PREFIX) {
-            let id = Uuid::try_parse(&reader.name()[ASSET_MANIFEST_SECTION_PREFIX.len()..])
+        if reader.name().starts_with(Self::ASSET_MANIFEST_SECTION_PREFIX) {
+            let id = Uuid::try_parse(&reader.name()[Self::ASSET_MANIFEST_SECTION_PREFIX.len()..])
                 .map_err(WassetError::from_deserialize)?;
             offsets.entry(id).or_default().manifest = reader.data();
         }
-        else if reader.name().starts_with(ASSET_DATA_SECTION_PREFIX) {
-            let id = Uuid::try_parse(&reader.name()[ASSET_DATA_SECTION_PREFIX.len()..])
+        else if reader.name().starts_with(Self::ASSET_DATA_SECTION_PREFIX) {
+            let id = Uuid::try_parse(&reader.name()[Self::ASSET_DATA_SECTION_PREFIX.len()..])
                 .map_err(WassetError::from_deserialize)?;
                 offsets.entry(id).or_default().data_offset = reader.data_offset() as u32;
         }

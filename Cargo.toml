@@ -10,7 +10,7 @@ members = [
 
 [workspace.package]
 edition = "2021"
-version = "0.1.1"
+version = "0.1.2"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/DouglasDwyer/wasset"
 readme = "README.md"
@@ -20,7 +20,7 @@ Embed external assets into WASM modules.
 
 [workspace.dependencies]
 # Internal dependencies
-wasset = { path = ".", version = "0.1.1" }
+wasset = { path = ".", version = "0.1.2" }
 wasset_example = { path = "wasset_example" }
 wasset_example_macro = { path = "wasset_example/wasset_example_macro" }
 wasset_example_module = { path = "wasset_example/wasset_example_module" }
@@ -38,6 +38,7 @@ serde = { version = "1.0.204", default-features = false, features = [ "derive" ]
 thiserror = { version = "1.0.63", default-features = false }
 toml = { version = "0.8.19", default-features = false, features = [ "parse" ] }
 uuid = { version = "1.10.0", default-features = false, features = [ "serde", "std" ] }
+wasm-encoder = { version = "0.215.0", default-features = false }
 wasmparser = { version = "0.215.0", default-features = false, features = [ "std" ] }
 
 [package]
@@ -53,7 +54,7 @@ description.workspace = true
 bytemuck = [ "dep:bytemuck" ]
 encode = [ "dep:toml", "uuid/fast-rng", "uuid/v4" ]
 encode_macro = [ "dep:litrs", "dep:proc-macro2", "dep:quote", "encode" ]
-parse = [ "dep:wasmparser" ]
+parse = [ "dep:wasm-encoder", "dep:wasmparser" ]
 relative_path = [ "encode_macro" ]
 
 [dependencies]
@@ -67,6 +68,7 @@ serde.workspace = true
 thiserror.workspace = true
 toml = { workspace = true, optional = true }
 uuid.workspace = true
+wasm-encoder = { workspace = true, optional = true }
 wasmparser = { workspace = true, optional = true }
 
 [build-dependencies]
